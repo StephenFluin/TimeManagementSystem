@@ -1,0 +1,22 @@
+h1 {
+	font-size: 18px;
+	padding: 5px;
+	margin-top: 3px;
+	border-bottom: 1px solid;
+}
+h2 {
+	font-size: 15px;
+	padding: 5px;
+}
+.standardBox > h1 {
+	margin: 0px;
+	padding: 3px;
+	font-size: 14px;
+	width: 250px;
+	border: 1px solid;
+	border-bottom: 0px none;
+}
+.standardBox  > div {
+	padding: 5px;
+	border: 1px solid;
+}

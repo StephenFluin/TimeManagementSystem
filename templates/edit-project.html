@@ -1,0 +1,13 @@
+<form method="post">
+	<input type="hidden" name="action" value="submit"/>
+	<input type="hidden" name="new" value="[new]"/>
+	<input type="hidden" name="oldName" value="[oldName]"/>
+	<input type="hidden" name="client" value="[client]"/>
+	Project Name:<input type="text" name="name" value="[name]"/><br/>
+	Default Billing Code:<input type="text" name="billingCode" value="[billingCode]"/><br/>
+	<br/>
+	<div class="box"><h1>Users assigned to this project</h1>
+		[userList]
+	</div>
+	<input type="submit" value="Save"/>
+</form>
