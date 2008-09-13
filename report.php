@@ -1,6 +1,6 @@
 <?php
 
-include("../include/functions.inc.php");
+include("include/functions.inc.php");
 
 
 $type = $_POST["type"];

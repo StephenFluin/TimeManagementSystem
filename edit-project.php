@@ -1,9 +1,10 @@
 <?php
 
-include("../include/functions.inc.php");
+include("include/functions.inc.php");
 
+authenticate();
 
-if( $_SESSION["timeManagement"] > 1 ) {
+if( $_SESSION["isProjectManager"] == 1 ) {
 	$replace["name"] = $replace["billingCode"] = $replace["new"] = 
 	$replace["client"] = $replace["oldName"]= $replace["taskList"] = 
 	$replace["userList"] = "";
@@ -35,20 +36,21 @@ if( $_SESSION["timeManagement"] > 1 ) {
 		$db->query($command);
 		
 		foreach($_POST["user"] as $key=>$value) {
-			$userList[] = "('$client', '$name', '" . $_POST[$key] . "')";
+			$userList[] = "('$client', '$name', '" . $_POST[$key] . "','$key' )";
 			// Using key $key, which found us: $_POST[$key] = ". $_POST[$key] . ".<br/>\n";
 		}
 		//var_dump($_POST);
 		$sql = "DELETE FROM tms_projectuser WHERE Client = '$client' AND Project = '$name';";
 		$db->query($sql);
 		if(count($userList) > 0) {
-			$sql = "INSERT INTO tms_projectuser (Client, Project, Username) VALUES " . join(", ", $userList);
+			$sql = "INSERT INTO tms_projectuser (Client, Project, Username, userid) VALUES " . join(", ", $userList);
 			$db->query($sql);
 		}
 		
 		
 		
 		forward("edit-project.php?client=$client&project=$name");
+
 	} else if( $client && $project) {
 		
 		
@@ -66,24 +68,21 @@ if( $_SESSION["timeManagement"] > 1 ) {
 		while(list($task) = $db->fetchrow()) {
 			$replace["taskList"] .= "<div><a href=\"edit-task.php?client=$client&amp;project=$project&amp;task=$task\">$task</a></div>";
 		}
-		$sql = "SELECT Username FROM tms_projectuser WHERE Client = '$client' AND Project = '$project' ORDER BY Username;";
+		$sql = "SELECT Username, userid FROM tms_projectuser WHERE Client = '$client' AND Project = '$project' ORDER BY Username;";
 		$db->query($sql);
-		$i = 0;
 		$usedUsers = array();
-		while(list($user) = $db->fetchrow()) {
-			$usedUsers[$user] = $user;
-			$replace["userList"] .= "<input type=\"hidden\" name=\"$i\" value=\"$user\"/>" .
-					"<label><input type=\"checkbox\" name=\"user[$i]\" checked=\"checked\"/>$user</label><br/>\n";
-				$i++;
+		while(list($user, $id) = $db->fetchrow()) {
+			$usedUsers[$user] = $id;
+			$replace["userList"] .= "<input type=\"hidden\" name=\"$id\" value=\"$user\"/>" .
+					"<label><input type=\"checkbox\" name=\"user[$id]\" checked=\"checked\"/>$user</label><br/>\n";
 		}
 		
-		$sql = "SELECT Username FROM users WHERE timeManagement > 0 ORDER BY Username";
+		$sql = "SELECT Username,id FROM tms_user ORDER BY Username";
 		$db->query($sql);
-		while(list($user) = $db->fetchrow()) {
+		while(list($user, $id) = $db->fetchrow()) {
 			if(!array_key_exists($user, $usedUsers)) {
-				$replace["userList"] .= "<input type=\"hidden\" name=\"$i\" value=\"$user\"/>" .
-					"<label><input type=\"checkbox\" name=\"user[$i]\"/>$user</label><br/>\n";
-				$i++;
+				$replace["userList"] .= "<input type=\"hidden\" name=\"$id\" value=\"$user\"/>" .
+					"<label><input type=\"checkbox\" name=\"user[$id]\"/>$user</label><br/>\n";
 			}
 		}
 		

@@ -1,6 +1,6 @@
 <?php
 
-include("../include/functions.inc.php");
+include("include/functions.inc.php");
 
 if($_SESSION["timeManagement"] > 0) {
 	$id = $_GET["id"];

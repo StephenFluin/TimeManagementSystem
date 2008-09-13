@@ -1,9 +1,10 @@
 <form method="post">
-	<input type="hidden" name="action" value="submit"/>
 	<input type="hidden" name="new" value="[new]"/>
 	<input type="hidden" name="oldName" value="[oldName]"/>
+	<input type="hidden" name="id" value="[userid]" />
 	Username:<input type="text" name="username" value="[username]"/><br/>
 	Password:<input type="password" name="password"/><br/>
-	Project Manager: <input type="checkbox" [checked] name="projectManager"/><br/>
-	<input type="submit" value="Save"/>
+	Project Manager: <input type="checkbox" [isPM] name="isProjectManager"/><br/>
+	Administrator: <input type="checkbox" [isAdmin] name="isAdministrator"/><br/>
+	<button type="submit" name="action" value="save">Save</button>
 </form>
