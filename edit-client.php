@@ -3,49 +3,47 @@
 include("include/functions.inc.php");
 
 if( $_SESSION["timeManagement"] > 1 ) {
-	
+	$db = new DB();
 
 	
 	// Client Editing Functions
-	$client = $_REQUEST["client"];
+	$clientId = $_GET["client"];
 	$action = $_REQUEST["action"];
-	$replace["name"] = $replace["billingCode"] = $replace["new"] = $replace["oldName"]= $replace["projectList"] = "";
+	$replace["name"] = $replace["new"] = $replace["oldName"]= $replace["projectList"] = "";
 	if($action == "new") {
 		$replace["new"] = "true";
 		showContent(wrap("edit-client.html",$replace));
 	} 
 	else if($action == "delete" && $client) {
-		$db = new DB();
 		$sql = "DELETE FROM tms_client WHERE Name = '" . mysql_real_escape_string($client) . "' LIMIT 1;";
 		$db->query($sql);
 		forward("home.php");	
 
 	} else if($action == "submit") {
 		$name = mysql_escape_string($_POST["name"]);
-		$billingCode =  mysql_escape_string($_POST["billingCode"] );
 		if($_POST["new"] == "true") {
-			$command = 	"INSERT INTO tms_client (Name, BillingCode) VALUES ('$name', '$billingCode');";
+			$command = 	"INSERT INTO tms_client (Name) VALUES ('$name');";
 		} else {
-			$command = "UPDATE tms_client SET Name = '$name', BillingCode = '$billingCode' WHERE Name = '" . $_POST["oldName"] . "' LIMIT 1;";
+			$command = "UPDATE tms_client SET Name = '$name' WHERE Name = '" . $_POST["oldName"] . "' LIMIT 1;";
 		}
-		$db = new DB();
+		
 		$db->query($command);
 		forward("home.php");
-	} else if( $client ) {
+	} else if( $clientId ) {
 		
 		
 		
-		$query = "SELECT Name, BillingCode FROM tms_client WHERE Name = '" . mysql_escape_string($client) . "' LIMIT 1;";
-		$db = new DB();
+		$query = "SELECT id, Name FROM tms_client WHERE id = '" . $db->escape($clientId) . "' LIMIT 1;";
 		$db->query($query);
-		list($replace["name"], $replace["billingCode"]) = $db->fetchrow();
+		list($replace["id"], $replace["name"]) = $db->fetchrow();
 		$replace["oldName"] = $replace["name"];
 		$content = wrap("edit-client.html", $replace);
 		
-		$sql = "SELECT Project FROM tms_project WHERE Client = '$client' ORDER BY Project";
+
+		$sql = "SELECT id, Project FROM tms_project WHERE clientId = '$clientId' ORDER BY project";
 		$db->query($sql);
-		while(list($project) = $db->fetchrow()) {
-			$replace["projectList"] .= "<div><a href=\"edit-project.php?client=$client&project=$project\">$project</a></div>";
+		while(list($id, $project) = $db->fetchrow()) {
+			$replace["projectList"] .= "<div><a href=\"edit-project.php?project=$id\">$project</a></div>";
 		}
 		
 		$content = wrap("edit-client.html", $replace);
