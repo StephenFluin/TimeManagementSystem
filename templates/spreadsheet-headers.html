@@ -6,9 +6,12 @@
 <style type="text/css">
 <!--
 * { margin: 0;padding:0;}
-#sheet input[type="text"] {width:50px;height:25px;border-style:solid;border: 0 1px 1px 0;padding:0px;margin:0;}
+#sheet			{overflow-x:scroll;}
+#sheet input[type="text"] {width:50px;height:25px;border:1px solid grey;;padding:0px;margin:0;}
 #sheet input:active[type="text"],
 #sheet input:focus[type="text"] {background-color:#CCFFFF;}
+#sheet input:hover[type="text"] {background-color:#DDFFFF;}
+
 input.date {width: 95px;}
 .dateHeader td {border-right: 1px solid black;}
 .dateHeader {font-weight:bold;}
@@ -26,7 +29,44 @@ function update(event,x,y) {
 	if(event && event.keyCode == 13) {
 		//alert("got enter key: " + (x + (parseInt(y) + 1)));
 		document.getElementById(x + (parseInt(y) + 1)).focus();
+		document.getElementById(x + (parseInt(y) + 1)).select();
 	}
+	// Keep this section only for speed puposes, once computers are faster, we should just recalc the whole table.
+	if(x && y) {
+		var total = 0;
+		for(var i = 0;i<columns;i++) {
+			total += parseFloat(document.getElementById(alphabet[i] + y).value);
+		}
+		document.getElementById("taskTotal" + y).innerHTML = total;
+		
+		total = 0;
+		for(var j = 1;j<=rows;j++) {
+			total += parseFloat(document.getElementById(x + j).value);
+		}
+		document.getElementById("dayTotal" + x).innerHTML = total;
+	} else {
+		//alert("no y");
+		for(var j = 1;j<=rows;j++) {
+			var total = 0;
+			for(var i = 0;i<columns;i++) {
+				total += parseFloat(document.getElementById(alphabet[i] + j).value);
+			}
+			document.getElementById("taskTotal" + j).innerHTML = total;
+		}
+		for(var i = 0;i<columns;i++) {
+			var total = 0;
+			for(var j = 1;j<=rows;j++) {
+				total += parseFloat(document.getElementById(alphabet[i] + j).value);
+			}
+			document.getElementById("dayTotal" + alphabet[i]).innerHTML = total;
+		}
+		
+	}
+		
+	
+}
+function iselect(element) {
+	element.select();
 }
 function customRange(input) { 
 	return {minDate: (input.id == "rangeEnd" ? $("#rangeStart").datepicker("getDate") : null), 

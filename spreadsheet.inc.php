@@ -1,8 +1,11 @@
 <?php
 $GLOBALS["extraHead"] = wrap("spreadsheet-headers.html",array());
 
-
-function showSheet($data) {
+/**
+taskData looks like $data[client][project][task] = tid
+userData looksl ike $data[tid][date] = hours
+*/
+function showSheet($taskData) {
 	$dayLength = (60*60*24);
 	
 	if($_POST["rangeStart"] && $_POST["rangeEnd"]) {
@@ -22,7 +25,12 @@ function showSheet($data) {
 	}
 	$daysInPeriod = ($etime - $stime) / ($dayLength) + 1;
 
-
+	//$data[tid][date] = hours
+	$db = new DB();
+	$db->query("SELECT taskId, date, hours FROM tms_tasklogentry WHERE userId = '" . $_SESSION["userid"] . "' ORDER BY entered ASC;");
+	while(list($taskId,$date,$hours) = $db->fetchrow()) {
+		$userData[$taskId][$date] = $hours;
+	}
 
 	$content = '
 	<form method="post">
@@ -31,11 +39,12 @@ function showSheet($data) {
 	
 	<button type="submit">Update</button>
 	</form>
-	<form id="sheet" onkeyup="update()">
+	
+	<form id="sheet" name="sheet" method="post" action="update-timesheet.php">
 	<table cellspacing="0">';
 	
 	
-	$string = "abcdefghijklmnopqrstuvwxyz";
+	$string = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-=";
 	
 	// Print Headers
 	$content .= "<tr class=\"dateHeader\"><td>Task</td>";
@@ -43,12 +52,11 @@ function showSheet($data) {
 		$content .= "<td>" . date("m/d",$stime+$i*$dayLength) . "</td>";
 	}
 	$content .= "<td>Total</td><td>Comment</td></tr>\n";
-	print "<pre>";
-	var_dump($data);
-	print "</pre>";
+
+	$rows = 0;
 	
 	// Print Contents
-	foreach($data as $client=>$clientData) {
+ 	foreach($taskData as $client=>$clientData) {
 		$content .="<tr class=\"summary client\"><td>$client</td>";
 		for($i = 0;$i < $daysInPeriod;$i++) { $content .= "<td></td>"; }
 		$content .= "<td></td><td></td></tr>\n";
@@ -58,20 +66,44 @@ function showSheet($data) {
 			for($i = 0;$i < $daysInPeriod;$i++) { $content .= "<td></td>"; }
 			$content .= "<td></td><td></td></tr>\n";
 			
+
 			foreach($projectData as $task=>$tid) {
-				$content .= '<tr><td>' . $task . '</td>';
+				$j++;
+				$content .= '<tr><td class="task">' . $task . '</td>';
 				for($i = 0;$i < $daysInPeriod;$i++) {
 					$cell = $string[$i] . $j;
-					$content .= '<td><input type="text" name="'. $cell . '" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')"/></td>';
+					if($userData[$tid][date("Y-m-d",$stime+$i*$dayLength)]) {
+						$hours = $userData[$tid][date("Y-m-d",$stime+$i*$dayLength)];
+						
+					} else {
+						$hours = 0;
+					}
+					
+					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')" onclick="iselect(this)" value="' . $hours . '"/></td>';
+					
 				}
-				$content .= "<td></td><td></td></tr>\n";
+				$rows++;
+				$content .= "<td id=\"taskTotal".$j."\"></td><td></td></tr>\n";
 				//$content .= "<div style=\"padding-left: 30px;\">$task<a href=\"edit-task-log-entry.php?action=new&id=$tid\" style=\"position: absolute;left: 500px;\">New Task Log Entry</a></div>\n";
 			}
 			$content .= "</div>";
 		}
 		$content .="</tr>";
 	}
-	$content .= "</table></form>";
+	
+	$content .= "<tr><td><em>Totals</em></td>";
+	for($i = 0;$i < $daysInPeriod;$i++) {
+		$content .= "<td id=\"dayTotal" . $string[$i] . "\"></td>";
+	}
+	$content .= "<td></td><td></td></tr>";
+	
+	$content .= "</table></form><button onclick=\"sheet.submit()\">Save</button>";
+	$content .= '<script type="text/javascript"><!--
+		var rows = ' . $rows . ';
+		var columns = ' .  $daysInPeriod . ';
+		var alphabet = "' . $string . '";
+		update();
+		--></script>';
 	return $content;
 
 }

@@ -199,11 +199,12 @@ function timelogger() {
 	if($db->size() == 0) {
 		$content .= "You aren't currently assigned to any tasks, please ask a project manager to assign you to one.";
 	} else {
-	
+		
 		$previousClient = $previousProject = "";
 		while(list($client, $project, $task, $tid) = $db->fetchrow()) {
 			$data[$client][$project][$task] = $tid;
 		}
+		
 		$content .= showSheet($data);
 	}
 

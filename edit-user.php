@@ -19,7 +19,7 @@ if( $_SESSION["isAdministrator"]  == 1 ) {
 		$name = $db->escape($_POST["username"]);
 		$password = $db->escape($_POST["password"]);
 		if($_POST["new"] == "true") {
-			$command = 	"INSERT INTO tms_user (Username, Password, timeManagement) VALUES ('$name', MD5('$password'), '" . ($_POST["projectManager"] ? "2" : "1") . "');";
+			$command = 	"INSERT INTO tms_user (Username, Password, isAdministrator, isProjectManager) VALUES ('$name', MD5('$password'), '" . ($_POST["isAdministrator"] ? "1" : "0") . "', '" . ($_POST["projectManager"] ? "2" : "1") . "');";
 		} else {
 			$command = "UPDATE tms_user SET Username = '$name', isProjectManager = '" . ($_POST["isProjectManager"] ? "1" : "0") . "', isAdministrator = '" . ($_POST["isAdministrator"] ? "1" : "0") . "' WHERE id = '" . $db->escape($_POST["id"]) . "' LIMIT 1;";
 

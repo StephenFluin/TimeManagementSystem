@@ -7,7 +7,7 @@ if( $_SESSION["timeManagement"] > 1 ) {
 
 	
 	// Client Editing Functions
-	$clientId = $_GET["client"];
+	$clientId = $db->escape($_GET["client"]);
 	$action = $_REQUEST["action"];
 	$replace["name"] = $replace["new"] = $replace["oldName"]= $replace["projectList"] = "";
 	if($action == "new") {
@@ -20,11 +20,11 @@ if( $_SESSION["timeManagement"] > 1 ) {
 		forward("home.php");	
 
 	} else if($action == "submit") {
-		$name = mysql_escape_string($_POST["name"]);
+		$name = $db->escape($_POST["name"]);
 		if($_POST["new"] == "true") {
 			$command = 	"INSERT INTO tms_client (Name) VALUES ('$name');";
 		} else {
-			$command = "UPDATE tms_client SET Name = '$name' WHERE Name = '" . $_POST["oldName"] . "' LIMIT 1;";
+			$command = "UPDATE tms_client SET Name = '$name' WHERE id='$clientId' LIMIT 1;";
 		}
 		
 		$db->query($command);
