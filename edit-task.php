@@ -3,51 +3,49 @@
 include("include/functions.inc.php");
 
 if( $_SESSION["timeManagement"] > 1 ) {
-	$replace["name"] = $replace["billingCode"] = $replace["new"] = 
-	$replace["client"] = $replace["oldName"] = $replace["expectedHours"] = 
-	$replace["taskCode"] = "";
+	$db = new DB();
+	$replace["name"] = $replace["new"] = 
+	$replace["client"] = $replace["expectedHours"] = 
+	$replace["taskId"] = "";
 	
 	// Project Editing Functions
-	$client = $_REQUEST["client"];
-	$project = $_REQUEST["project"];
-	$task = $_REQUEST["task"];
+	$projectId = $db->escape($_GET["project"]);
+	$taskId = $db->escape($_POST["taskId"]);
+	$task = $db->escape($_GET["task"]);
 	$action = $_REQUEST["action"];
 	
-	$replace["client"] = $client;
-	$replace["project"] = $project;
+	$replace["projectId"] = $projectId;
 	
 	if($action == "new") {
-		$db = new DB();
-		$db->query("SELECT BillingCode FROM tms_project WHERE Client = '" . mysql_escape_string($client) . "' AND Project = '" . mysql_escape_string($project) . "';");
-		list( $replace["billingCode"] ) = $db->fetchrow();
-		
+
 		$replace["new"] = "true";
 		showContent(wrap("edit-task.html",$replace));
 	} else if($action == "submit") {
+	
 		// "Inserting a new task.";
 		$task = mysql_escape_string($_POST["name"]);
 		
-		$taskCode = mysql_escape_string($_POST["taskCode"] );
-		$billingCode =  mysql_escape_string($_POST["billingCode"] );
-		$expectedHours = mysql_escape_string( $_POST["expectedHours"]);
-		$client = mysql_escape_string($_POST["client"]);
-		$project = mysql_escape_string($_POST["project"]);
+		
+		$expectedHours = $db->escape( $_POST["expectedHours"]);
+		$project = $db->escape($_POST["projectId"]);
 		if($_POST["new"] == "true") {
-			$command = 	"INSERT INTO tms_task (Client, Project, Task, TaskCode, BillingCode, ExpectedHours) VALUES ('$client', '$project', '$task', '$taskCode', '$billingCode', '$expectedHours');";
+			$command = 	"INSERT INTO tms_task (projectId, Task,  ExpectedHours) VALUES ('$projectId', '$task',  '$expectedHours');";
 		} else {
-			$command = "UPDATE tms_task SET Task = '$task', TaskCode = '$taskCode', BillingCode = '$billingCode', ExpectedHours = '$expectedHours' WHERE Task = '" . $_POST["oldName"] . "' AND Project = '" . $_POST["project"] . "' AND Client = '" . $_POST["client"] . "' LIMIT 1;";
+			$command = "UPDATE tms_task SET Task = '$task', ExpectedHours = '$expectedHours' WHERE id = '$taskId' LIMIT 1;";
 		}
-		$db = new DB();
+	
 		$db->query($command);
-		forward("edit-project.php?client=$client&project=$project");
-	} else if( $client && $project && $task) {
+		if(!$taskId) {
+			$taskId = $db->getInsertId();
+		}
+		forward("edit-project.php?project=$project");
+	} else if( $task) {
 		
 		
 		
-		$query = "SELECT Task, TaskCode, BillingCode, ExpectedHours FROM tms_task WHERE Client = '" . mysql_escape_string($client) . "' AND Project = '" . mysql_escape_string( $project ) . "' AND Task = '" . mysql_escape_string( $task ) . "' LIMIT 1;";
-		$db = new DB();
+		$query = "SELECT id, Task, projectId,  ExpectedHours FROM tms_task WHERE  id = '$task' LIMIT 1;";
 		$db->query($query);
-		list($replace["name"], $replace["taskCode"], $replace["billingCode"], $replace["expectedHours"]) = $db->fetchrow();
+		list($replace["taskId"], $replace["name"], $replace["projectId"], $replace["expectedHours"]) = $db->fetchrow();
 		$replace["oldName"] = $replace["name"];
 		
 		

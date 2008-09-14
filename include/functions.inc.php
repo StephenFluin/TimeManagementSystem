@@ -190,23 +190,22 @@ function timelogger() {
 	$userid  = $_SESSION["userid"];
 	
 	$sql = "SELECT c.Name, p.project, t.task, t.id FROM tms_projectuser as pu " .
-			"LEFT JOIN tms_task as t ON pu.projectId = t.projectId " . 
+			"JOIN tms_task as t ON pu.projectId = t.projectId " . 
 			"LEFT JOIN tms_project as p ON p.id = pu.projectId " . 
 			"LEFT JOIN tms_client as c ON c.id = p.clientId " . 
 			"WHERE pu.userid = '$userid' ORDER BY c.Name, p.project, t.Task";
 	$db->query($sql);
 	//$content .= $sql;
 	if($db->size() == 0) {
-		return "You aren't currently assigned to any tasks, please ask a project manager to assign you to one.";
-	}
+		$content .= "You aren't currently assigned to any tasks, please ask a project manager to assign you to one.";
+	} else {
 	
-	$previousClient = $previousProject = "";
-	while(list($client, $project, $task, $tid) = $db->fetchrow()) {
-		$data[$client][$project][$task] = $tid;
+		$previousClient = $previousProject = "";
+		while(list($client, $project, $task, $tid) = $db->fetchrow()) {
+			$data[$client][$project][$task] = $tid;
+		}
+		$content .= showSheet($data);
 	}
-	$content .= showSheet($data);
-	/*
-	*/
 
 	$content .= "</div></div>";
 	return $content;

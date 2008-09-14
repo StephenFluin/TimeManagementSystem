@@ -20,7 +20,7 @@ if( $_SESSION["isProjectManager"] == 1 ) {
 	
 	if($action == "new") {
 		
-		
+		$replace["projectName"] = "";
 		$replace["new"] = "true";
 		showContent(wrap("edit-project.html",$replace));
 	} else if($action == "submit") {
@@ -66,10 +66,14 @@ if( $_SESSION["isProjectManager"] == 1 ) {
 		
 		$replace["projectId"] = $projectId;
 		
-		$sql = "SELECT id, Task FROM tms_task WHERE id='$projectId' ORDER BY Task";
+		$sql = "SELECT id, Task FROM tms_task WHERE projectId='$projectId' ORDER BY Task";
 		$db->query($sql);
-		while(list($taskId, $task) = $db->fetchrow()) {
-			$replace["taskList"] .= "<div><a href=\"edit-task.php?task=$taskId\">$task</a></div>";
+		if($db->size() == 0) {
+			$replace["taskList"] = "There are no tasks for this project yet.";
+		} else {
+			while(list($taskId, $task) = $db->fetchrow()) {
+				$replace["taskList"] .= "<div><a href=\"edit-task.php?task=$taskId\">$task</a></div>";
+			}
 		}
 		$sql = "SELECT Username, userid FROM tms_projectuser WHERE projectId='$projectId' ORDER BY Username;";
 		$db->query($sql);
