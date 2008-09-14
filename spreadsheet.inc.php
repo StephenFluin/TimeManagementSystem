@@ -1,29 +1,44 @@
 <?php
 $GLOBALS["extraHead"] = wrap("spreadsheet-headers.html",array());
 
+function updateSheet() {
+	$uid = $_SESSION["userid"];
+	
+	if($_POST["modified"] == "true" && count($_POST["task"]) > 0) {
+	
+		foreach($_POST["task"] as $key=>$hours) {
+			list($tid,$date) = explode("-",$key);
+			if($hours > 0) {
+				
+				$comments[] = "('$uid', '$tid', '$date','$hours')";	
+			}
+		}
+	
+		if(count($comments) > 0) {
+			$db = new DB();
+			
+			list($start,$end,$stime,$etime,$daysInPeriod,$dayLength) = getDatePeriod();
+			$db->query("DELETE FROM tms_tasklogentry WHERE userId='$uid' AND date BETWEEN STR_TO_DATE('$start','%m/%d/%Y') AND STR_TO_DATE('$end','%m/%d/%Y')");
+			
+			
+			$sql = "INSERT INTO tms_tasklogentry (userId, taskId, date, hours) VALUES " . join(",",$comments) . ";";
+			$db->query($sql);
+		} else {
+			// No non-zero entries to insert.
+		}
+	} else {
+		// Nothing to update.
+	}
+		
+}
+
 /**
 taskData looks like $data[client][project][task] = tid
 userData looksl ike $data[tid][date] = hours
 */
 function showSheet($taskData) {
-	$dayLength = (60*60*24);
-	
-	if($_POST["rangeStart"] && $_POST["rangeEnd"]) {
-		$start = $_POST["rangeStart"];
-		$end = $_POST["rangeEnd"];
-	
-		$stime = strtotime($start);
-		$etime = strtotime($end);
-	
-	} else {
-		$stime = mktime()-($dayLength)*(intval(date("w"))-1);
-		$etime = mktime()-($dayLength)*(intval(date("w"))-7);
-		
-	
-		$start = date("m/d/Y", $stime);
-		$end = date("m/d/Y", $etime);
-	}
-	$daysInPeriod = ($etime - $stime) / ($dayLength) + 1;
+
+	list($start,$end,$stime,$etime,$daysInPeriod,$dayLength) = getDatePeriod();
 
 	//$data[tid][date] = hours
 	$db = new DB();
@@ -33,14 +48,13 @@ function showSheet($taskData) {
 	}
 
 	$content = '
-	<form method="post">
+	<form id="sheet" name="sheet" method="post">
 	Please select a date range: <input id="rangeStart" name="rangeStart" type="text" class="date" value="' . $start . '">-<input id="rangeEnd" name="rangeEnd" type="text" class="date" value="' . $end . '">
 
+	<input type="hidden" name="modified" value="false"/>	
+	<button type="button" onclick="sheet.submit()">Update</button>
 	
-	<button type="submit">Update</button>
-	</form>
 	
-	<form id="sheet" name="sheet" method="post" action="update-timesheet.php">
 	<table cellspacing="0">';
 	
 	
@@ -79,7 +93,7 @@ function showSheet($taskData) {
 						$hours = 0;
 					}
 					
-					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')" onclick="iselect(this)" value="' . $hours . '"/></td>';
+					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')" onclick="iselect(this)" autocomplete="off" value="' . $hours . '"/></td>';
 					
 				}
 				$rows++;
@@ -106,4 +120,28 @@ function showSheet($taskData) {
 		--></script>';
 	return $content;
 
+}
+
+function getDatePeriod() {
+	$dayLength = (60*60*24);
+	
+	if($_POST["rangeStart"] && $_POST["rangeEnd"]) {
+		$start = $_POST["rangeStart"];
+		$end = $_POST["rangeEnd"];
+	
+		$stime = strtotime($start);
+		$etime = strtotime($end);
+	
+	} else {
+		// Default Monday-Sunday of this week.
+		$stime = mktime()-($dayLength)*(intval(date("N"))-1);
+		$etime = mktime()-($dayLength)*(intval(date("N"))-7);
+		
+	
+		$start = date("m/d/Y", $stime);
+		$end = date("m/d/Y", $etime);
+	}
+	$daysInPeriod = ($etime - $stime) / ($dayLength) + 1;
+
+	return array($start,$end,$stime,$etime,$daysInPeriod,$dayLength);
 }

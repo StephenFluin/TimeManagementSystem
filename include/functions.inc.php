@@ -184,6 +184,12 @@ function getUserList() {
 function timelogger() {
 	require("spreadsheet.inc.php");
 	
+	// Handle form postbacks
+	if($_POST["task"]) {
+		updateSheet();
+	}
+	
+	
 	$db = new DB();
 	$content = "<div class=\"standardBox\"><h1>Time Logging</h1><div>";
 	$username  = $db->escape($_SESSION["username"]);

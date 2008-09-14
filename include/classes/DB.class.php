@@ -38,6 +38,7 @@ class DB {
 	function query( $query ) {
 		if ($_GET["action"] == "debug") $time_start = microtime();
 
+		$this->lastQuery = $query;
 		$this->results = mysql_query($query, $this->database);
 
 		if ($_GET["action"] == "debug") $time = microtime() - $time_start;
