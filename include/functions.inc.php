@@ -90,6 +90,7 @@ function getNavBar() {
 	
 	if($_SESSION["userid"]) {
 		$body .= "<a href=\"home.php\"" . ($_SERVER["PHP_SELF"] == "/TMS/home.php" ? $thisPageClass : "") . ">Home</a>";
+		$body .= "<a href=\"time.php\"" . ($_SERVER["PHP_SELF"] == "/TMS/time.php" ? $thisPageClass : "") . ">Time</a>";
 		if($_SESSION["isAdministrator"]) {
 			$body .= "<a href=\"admin.php\"" . ($_SERVER["PHP_SELF"] == "/TMS/admin.php" ? $thisPageClass : "" ) . ">Admin</a>";
 			
@@ -222,9 +223,9 @@ function reporting() {
 	$content = "<div class=\"standardBox\"><h1>Reporting</h1><div>\n";
 	$content .= "Report by User:<br/>\n";
 	$content .= "<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"user\"/>" .
-			"<select name=\"username\">";
+			"<select name=\"userid\">";
 	foreach(getUserList() as $user=>$id) {
-		$content .= "<option value=\"id\">$user</option>\n";
+		$content .= "<option value=\"$id\">$user</option>\n";
 	}
 	$content .= "</select><input type=\"submit\" value=\"go\"/></form></div></div>";
 
@@ -264,5 +265,56 @@ function projectManage() {
 	
 	
 	return "<div class=\"standardBox\"><h1>Project Management</h1><div>" . $content . "</div></div>\n\n";
+}
+
+// Shows the dashboard
+function getDashboard() {
+	$db = new DB();
+	// Get the list of projects, the total estimated hours, and the total spent hours.
+	$db->query("SELECT p.project, c.name, 
+				(SELECT SUM(t.ExpectedHours) FROM tms_task t WHERE t.projectId = p.id),
+				(SELECT SUM(tl.hours) FROM tms_task t 
+					JOIN tms_tasklogentry tl ON tl.taskId = t.id
+					WHERE t.projectId = p.id),
+				(SELECT MIN(tl.date) FROM tms_task t 
+					JOIN tms_tasklogentry tl ON tl.taskId = t.id
+					WHERE t.projectId = p.id),
+				(SELECT MAX(tl.date) FROM tms_task t 
+					JOIN tms_tasklogentry tl ON tl.taskId = t.id
+					WHERE t.projectId = p.id)
+			FROM tms_project p 
+				JOIN tms_client c ON c.id = p.clientId 
+			ORDER BY p.date DESC");
+	while( list($project, $client, $total, $actual) = $db->fetchrow()) {
+		if($total == "") {
+			$data = "No tasks have been defined yet.";
+		} else if ($actual == "") {
+			$data = "No hours have been logged yet. Estimate: $total";
+		} else {
+			$data = "$actual / $total";
+			
+			$chartWidth = 500;
+			if($actual > $total) {
+				$overageWidth = ($actual - $total) / $total * $chartWidth;
+				$overage = $actual - $total;
+				$actual = $total;
+				
+			} else {
+				$overageWidth = 0;
+			}
+		
+			
+			$style = "width: " . ($actual / $total) * $chartWidth . "px;background-color:green;";
+			$result .= "\n<div style=\"width:{$chartWidth}px;border:3px solid cyan;position:relative;\"><div class=\"bar\" style=\"$style\">{$actual}h/{$total}h</div><div class=\"overage\" style=\"width: {$overageWidth}px;background-color:red;position:absolute;right:-{$overageWidth}px;top:0px;\">{$overage}h</div></div>";
+		}
+		$result .=  "$client - $project<hr/>";
+
+	}
+	$result .= "</table>";
+	
+	return $result;
+	
+	
+
 }
 	

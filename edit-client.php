@@ -2,7 +2,7 @@
 
 include("include/functions.inc.php");
 
-if( $_SESSION["timeManagement"] > 1 ) {
+if( $_SESSION["isProjectManager"] > 0 ) {
 	$db = new DB();
 
 	

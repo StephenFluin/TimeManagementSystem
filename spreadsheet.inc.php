@@ -28,6 +28,7 @@ function updateSheet() {
 		}
 	} else {
 		// Nothing to update.
+		//print "Nothing to update!";
 	}
 		
 }
@@ -57,7 +58,7 @@ function showSheet($taskData) {
 	
 	<table cellspacing="0">';
 	
-	
+	// This method causes problems with long search terms
 	$string = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-=";
 	
 	// Print Headers

@@ -3,7 +3,7 @@
 include("include/functions.inc.php");
 authenticate();
 
-if( $_SESSION["timeManagement"] > 1 ) {
+if( $_SESSION["isProjectManager"] > 0 ) {
 	$db = new DB();
 	$replace["name"] = $replace["new"] = 
 	$replace["client"] = $replace["expectedHours"] = 
