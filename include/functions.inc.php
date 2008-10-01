@@ -231,7 +231,7 @@ function administration() {
 	foreach(getUserList() as $user=>$id) {
 		$content .=  "<div style=\"padding-left: 10px;\">" .
 				"	<a href=\"edit-user.php?user=$id\">$user</a>" .
-				"	[<a href=\"edit-user.php?action=delete&user=$id\">x</a>]" .	
+				"	[<a href=\"edit-user.php?action=delete&user=$id\" onclick=\"return confirmDelete('this user, ALL logged time, and project assignments');\">x</a>]" .	
 				"</div>";
 	}
 	$content .=  "</div>\n";
