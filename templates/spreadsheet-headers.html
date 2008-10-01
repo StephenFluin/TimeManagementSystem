@@ -51,6 +51,12 @@ function update(event,x,y) {
 	}
 	// @TODO Keep this section only for speed puposes, once computers are faster, we should just recalc the whole table.
 	if(x && y && !(event.keyCode >= 37 && event.keyCode <= 40 || event.keyCode ==13 || event.keyCode == 9 || event.keyCode==16)) {
+		if(document.getElementById(x + y).value == "") {
+			document.getElementById(x + y).value = "0";
+		} else {
+			//alert("cell wasn't empty");
+		}
+
 		document.forms.sheet.modified.value = "true";
 		var total = 0;
 		for(var i = 0;i<columns;i++) {
