@@ -124,42 +124,22 @@ function forward( $newUrl) {
 	header ("Location: " . $newUrl );
 	return true;
 }
+function getMonthBreakdownSelect() {
+	$start = strtotime("20080101 1200");
 
-function checkLogin() {
-	$db = new DB();
-	if( $_POST["action"] == "login" ) {
-		$i = mysql_escape_string($_POST["i"]);
-		$o = mysql_escape_string($_POST["o"]);
-		if(!$i) { 
-			$return .= "You were missing a username.<br />\n";
-		} else if(!$o) {
-			$return .= "You were missing a password.<br />\n";
-		} else {
-			$query = "SELECT id, Username, SuperAdmin, NewsAdmin, YOAAdmin, ImageAccess, timeManagement FROM `users` WHERE `UserName` = '$i' AND `Password` = SHA1('$o') LIMIT 1;";
-			$db->query( $query );
-			if( list($_SESSION["userid"], $_SESSION["username"], $_SESSION["superAdmin"],
-				$_SESSION["newsAdmin"], $_SESSION["YOAAdmin"] , $_SESSION["imageAccess"],
-				$_SESSION["timeManagement"]) = $db->fetchrow()) {
-				/*list( $_SESSION["userid"] , 
-					$_SESSION["username"] , 
-					$_SESSION["superAdmin"] , 
-					$_SESSION["newsAdmin"] , 
-					$_SESSION["YOAAdmin"] ,  
-					$_SESSION["imageAccess"], 
-					$_SESSION["timeManagement"]) = $user;*/
-				$query = "UPDATE `users` SET `lastlogin` = NOW(), `ip` = '" . $_SERVER["REMOTE_ADDR"] . "' WHERE UserName = '" . $_SESSION["userid"] . "';";
-				$results = $db->query( $query );
-				$return .= "Login was successful. ";
-				//var_dump($_SESSION);
-			} else {
-				$return .= "Username $i and given password $o were not found in the database.";
-			}
-		}
-	} else {
-		// Nothing
+
+	$month = 0;
+	$content = "<select name=\"month\">";
+	while(mktime(0,0,0,date("m") - $month) > $start) {
+		$date = date("Y-m",mktime(0,0,0,date("m") - $month));
+		$dateName = date("F-Y", mktime(0,0,0,date("m") - $month++));
+		$content .= "<option value=\"$date\">$dateName</option>\n";
+		
 	}
-	return $return;
+	$content .= "</select>";
+	return $content;	
 }
+
 
 
 function showError($msg = "There was a problem with the database.") {
@@ -173,7 +153,7 @@ function getUserList() {
 	$db = new DB();
 	
 	// Create user list which is used by most user roles.
-	$sql = "SELECT Username, id FROM tms_user WHERE timeManagement > 0 ORDER BY Username";
+	$sql = "SELECT Username, id FROM tms_user ORDER BY Username";
 	$db->query($sql);
 	$userList = array();
 	while( list( $user, $id ) = $db->fetchrow() ) {
@@ -220,14 +200,27 @@ function timelogger() {
 }
 
 function reporting() {
+	$submitButton = '<input type="submit" value="go"/>';
+
 	$content = "<div class=\"standardBox\"><h1>Reporting</h1><div>\n";
-	$content .= "Report by User:<br/>\n";
-	$content .= "<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"user\"/>" .
+	$content .= "User Month Hours:<br/>\n";
+	$content .= "<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"user-month\"/>" .
 			"<select name=\"userid\">";
 	foreach(getUserList() as $user=>$id) {
 		$content .= "<option value=\"$id\">$user</option>\n";
 	}
-	$content .= "</select><input type=\"submit\" value=\"go\"/></form></div></div>";
+	$content .="</select>";
+	
+	// print list of months starting with this one backwards.
+	$content .= getMonthBreakdownSelect();
+
+	
+	
+	$content .= "$submitButton</form><br/><br/>";
+
+	$content .= 'Adjust Actuals:<br/>' . 
+			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"adjust-actuals\"/>".
+			getMonthBreakdownSelect() . $submitButton . "</form>";
 
 	return $content;
 }

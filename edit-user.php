@@ -21,7 +21,12 @@ if( $_SESSION["isAdministrator"]  == 1 ) {
 		if($_POST["new"] == "true") {
 			$command = 	"INSERT INTO tms_user (Username, Password, isAdministrator, isProjectManager) VALUES ('$name', MD5('$password'), '" . ($_POST["isAdministrator"] ? "1" : "0") . "', '" . ($_POST["projectManager"] ? "2" : "1") . "');";
 		} else {
-			$command = "UPDATE tms_user SET Username = '$name', isProjectManager = '" . ($_POST["isProjectManager"] ? "1" : "0") . "', isAdministrator = '" . ($_POST["isAdministrator"] ? "1" : "0") . "' WHERE id = '" . $db->escape($_POST["id"]) . "' LIMIT 1;";
+			if($password != "") {
+				$updatePass = ", Password = MD5('$password')";
+			} else {
+				$updatePass = "";
+			}
+			$command = "UPDATE tms_user SET Username = '$name', isProjectManager = '" . ($_POST["isProjectManager"] ? "1" : "0") . "', isAdministrator = '" . ($_POST["isAdministrator"] ? "1" : "0") . "'$updatePass WHERE id = '" . $db->escape($_POST["id"]) . "' LIMIT 1;";
 
 			// Allow immediate update of permissions.
 			if($_SESSION["userid"] == $_POST["id"]) {
@@ -32,7 +37,12 @@ if( $_SESSION["isAdministrator"]  == 1 ) {
 		}
 		
 		$db->query($command);
-		forward("home.php");
+		forward("admin.php");
+	} else if ($_GET["action"] == "delete" && $_GET["user"]) {
+		$uid = $db->escape($_GET["user"]);
+		$db->query("DELETE FROM tms_user WHERE id='$uid' LIMIT 1;");
+		forward("admin.php");
+	
 	} else if( $_GET["user"] ) {
 		
 				

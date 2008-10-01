@@ -3,8 +3,10 @@
 include("include/functions.inc.php");
 
 $result = checkTMSLogin();
-if($result) {
-	showContent($result);
+if($_SESSION["userid"]) {
+	forward("index.php");
+} else if($result) {
+	showContent($result . wrap("not-logged-in.html", array( "destination" =>  $_SERVER["PHP_SELF"] ) ));
 } else {
 	forward($_POST["forward"]);
 }
@@ -18,14 +20,14 @@ function checkTMSLogin() {
 	} else if(!$p) {
 		$return .= "You were missing a password.<br />\n";
 	} else {
-		$query = "SELECT id, Username, isProjectManager, isAdministrator, timeManagement FROM tms_user WHERE `UserName` = '$u' AND `Password` = MD5('$p') LIMIT 1;";
+		$query = "SELECT id, Username, isProjectManager, isAdministrator FROM tms_user WHERE `UserName` = '$u' AND `Password` = MD5('$p') LIMIT 1;";
 		$db->query( $query );
-		if( list($_SESSION["userid"], $_SESSION["username"], $_SESSION["isProjectManager"], $_SESSION["isAdministrator"], $_SESSION["timeManagement"]) = $db->fetchrow()) {
+		if( list($_SESSION["userid"], $_SESSION["username"], $_SESSION["isProjectManager"], $_SESSION["isAdministrator"]) = $db->fetchrow()) {
 			unset($return);
 			
 		} else {
-			$return .= "Username $u and password $p were not found in the TMS database.<br />\n";
-			var_dump($_POST);
+			$return .= "Username '$u' and password were not found in the TMS database.<br />\n";
+			//var_dump($_POST);
 		}
 	}
 	return $return;

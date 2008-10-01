@@ -2,27 +2,34 @@
 $GLOBALS["extraHead"] = wrap("spreadsheet-headers.html",array());
 
 function updateSheet() {
+	$db = new DB();
 	$uid = $_SESSION["userid"];
-	
 	if($_POST["modified"] == "true" && count($_POST["task"]) > 0) {
 	
 		foreach($_POST["task"] as $key=>$hours) {
 			list($tid,$date) = explode("-",$key);
+			if(isset($_POST["comment"][$key]) && $_POST["comment"][$key]) {
+				//print "<br/>Accessing: '$key', value: '" . $_POST["comment"][$key] . "'";
+				$comment = $db->escape($_POST["comment"][$key]);
+			} else {
+				$comment = "";
+			}
 			if($hours > 0) {
 				
-				$comments[] = "('$uid', '$tid', '$date','$hours')";	
+				$taskEntries[] = "('$uid', '$tid', '$date','$hours','$comment')";	
 			}
 		}
 	
-		if(count($comments) > 0) {
+		if(count($taskEntries) > 0) {
 			$db = new DB();
 			
 			list($start,$end,$stime,$etime,$daysInPeriod,$dayLength) = getDatePeriod();
 			$db->query("DELETE FROM tms_tasklogentry WHERE userId='$uid' AND date BETWEEN STR_TO_DATE('$start','%m/%d/%Y') AND STR_TO_DATE('$end','%m/%d/%Y')");
 			
 			
-			$sql = "INSERT INTO tms_tasklogentry (userId, taskId, date, hours) VALUES " . join(",",$comments) . ";";
+			$sql = "INSERT INTO tms_tasklogentry (userId, taskId, date, hours, comment) VALUES " . join(",",$taskEntries) . ";";
 			$db->query($sql);
+			
 		} else {
 			// No non-zero entries to insert.
 		}
@@ -43,9 +50,9 @@ function showSheet($taskData) {
 
 	//$data[tid][date] = hours
 	$db = new DB();
-	$db->query("SELECT taskId, date, hours FROM tms_tasklogentry WHERE userId = '" . $_SESSION["userid"] . "' ORDER BY entered ASC;");
-	while(list($taskId,$date,$hours) = $db->fetchrow()) {
-		$userData[$taskId][$date] = $hours;
+	$db->query("SELECT taskId, date, hours, comment FROM tms_tasklogentry WHERE userId = '" . $_SESSION["userid"] . "' ORDER BY entered ASC;");
+	while(list($taskId,$date,$hours,$comment) = $db->fetchrow()) {
+		$userData[$taskId][$date] = array($hours,$comment);
 	}
 
 	$content = '
@@ -58,7 +65,7 @@ function showSheet($taskData) {
 	
 	<table cellspacing="0">';
 	
-	// This method causes problems with long search terms
+	// This method of column naming causes problems with long search terms
 	$string = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-=";
 	
 	// Print Headers
@@ -84,11 +91,20 @@ function showSheet($taskData) {
 
 			foreach($projectData as $task=>$tid) {
 				$j++;
+				$comments = "";
 				$content .= '<tr><td class="task">' . $task . '</td>';
 				for($i = 0;$i < $daysInPeriod;$i++) {
+					
 					$cell = $string[$i] . $j;
-					if($userData[$tid][date("Y-m-d",$stime+$i*$dayLength)]) {
-						$hours = $userData[$tid][date("Y-m-d",$stime+$i*$dayLength)];
+					$dayData = $userData[$tid][date("Y-m-d",$stime+$i*$dayLength)];
+					if($dayData) {
+						$hours = $dayData[0];
+						if($hours != "0") {
+							$comment = $dayData[1];
+							$comments .= date("m/d",$stime+$i*$dayLength) . "<input type=\"text\" name=\"comment[$tid-" . date("Ymd",$stime+$i*$dayLength) . "]\" value=\"$comment\" onkeyup=\"changed();\"/>";
+						} else {
+							$comments .= "none.";
+						}
 						
 					} else {
 						$hours = 0;
@@ -96,9 +112,10 @@ function showSheet($taskData) {
 					
 					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')" onclick="iselect(this)" autocomplete="off" value="' . $hours . '"/></td>';
 					
+					
 				}
 				$rows++;
-				$content .= "<td id=\"taskTotal".$j."\"></td><td></td></tr>\n";
+				$content .= "<td id=\"taskTotal".$j."\"></td><td class=\"comment\">$comments</td></tr>\n";
 				//$content .= "<div style=\"padding-left: 30px;\">$task<a href=\"edit-task-log-entry.php?action=new&id=$tid\" style=\"position: absolute;left: 500px;\">New Task Log Entry</a></div>\n";
 			}
 			$content .= "</div>";

@@ -1,9 +1,9 @@
-<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="http://code.jquery.com/jquery-latest.js"></script>
 <script src="http://dev.jquery.com/view/tags/ui/latest/ui/ui.datepicker.js"></script>
 <link rel="stylesheet" href="http://dev.jquery.com/view/tags/ui/latest/themes/flora/flora.datepicker.css" type="text/css" media="screen" title="Flora (Default)">
 
 
-<style type="text/css">
+<style>
 <!--
 * { margin: 0;padding:0;}
 #sheet			{overflow-x:scroll;}
@@ -11,6 +11,13 @@
 #sheet input:active[type="text"],
 #sheet input:focus[type="text"] {background-color:#CCFFFF;}
 #sheet input:hover[type="text"] {background-color:#DDFFFF;}
+
+#sheet .comment		{font-style: italic;}
+#sheet .comment input		{width: 50px;}
+#sheet .comment input:hover,
+#sheet .comment input:focus {background-color:white;}
+#sheet .comment input:focus {width:300px;}
+
 
 input.date {width: 95px;}
 .dateHeader td {border-right: 1px solid black;}
@@ -24,6 +31,9 @@ $(document).ready(function(){
 		beforeShow: customRange
 });
   });
+function changed() {
+	document.forms.sheet.modified.value = "true";
+}
 
 function update(event,x,y) {
 	if(event && (event.keyCode == 13 || event.keyCode == 40)) {
@@ -41,7 +51,7 @@ function update(event,x,y) {
 	}
 	// @TODO Keep this section only for speed puposes, once computers are faster, we should just recalc the whole table.
 	if(x && y && !(event.keyCode >= 37 && event.keyCode <= 40 || event.keyCode ==13 || event.keyCode == 9 || event.keyCode==16)) {
-		sheet.modified.value = "true";
+		document.forms.sheet.modified.value = "true";
 		var total = 0;
 		for(var i = 0;i<columns;i++) {
 			total += parseFloat(document.getElementById(alphabet[i] + y).value);
