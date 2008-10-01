@@ -28,6 +28,7 @@ function showContent($content,  $pageTitle = "", $section = "") {
 	}
 		
 	print wrap("primary.html", $replace);
+	exit;
 		
 }
 function showPage($pageName, $pageTitle = "") {

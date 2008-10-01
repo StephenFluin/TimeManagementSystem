@@ -60,10 +60,14 @@ if($type == "user-month") {
 			GROUP BY le.taskId, le.userId 
 			ORDER BY c.name,p.project;";
 	$db->query($sql);
+	if($db->size() == 0) {
+		showContent ("No data is available for the requested period.");
+	}
 	while(list($client, $project, $task, $username, $hours, $comments) = $db->fetchrow()) {
 		$data[$client][$project][$task][$username] = array($hours,$comments);
 	}
 	$content .= "<table>";
+	
 	foreach($data as $client=>$clientData) {
 		$content .= "<tr class=\"summary client\"><td>$client</td><td></td><td></td></tr>";
 		foreach($clientData as $project=>$projectData) {
