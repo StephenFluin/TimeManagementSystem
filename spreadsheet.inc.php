@@ -95,7 +95,7 @@ function showSheet($taskData) {
 				$content .= '<tr><td class="task">' . $task . '</td>';
 				for($i = 0;$i < $daysInPeriod;$i++) {
 					
-					$cell = $string[$i] . $j;
+					$cell = $i . "x" . $j;
 					$dayData = $userData[$tid][date("Y-m-d",$stime+$i*$dayLength)];
 					if($dayData) {
 						$hours = $dayData[0];
@@ -110,8 +110,7 @@ function showSheet($taskData) {
 						$hours = 0;
 					}
 					
-					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$string[$i].'\',\''.$j.'\')" onclick="iselect(this)" autocomplete="off" value="' . $hours . '"/></td>';
-					
+					$content .= '<td><input type="text" name="task['. $tid. "-" . date("Ymd",$stime+$i*$dayLength) . ']" id="'. $cell . '" onkeyup="update(event,\''.$i.'\',\''.$j.'\')" onclick="iselect(this)" autocomplete="off" value="' . $hours . '"/></td>';
 					
 				}
 				$rows++;
@@ -125,9 +124,9 @@ function showSheet($taskData) {
 	
 	$content .= "<tr><td><em>Totals</em></td>";
 	for($i = 0;$i < $daysInPeriod;$i++) {
-		$content .= "<td id=\"dayTotal" . $string[$i] . "\"></td>";
+		$content .= "<td id=\"dayTotal" . $i . "\"></td>";
 	}
-	$content .= "<td></td><td></td></tr>";
+	$content .= "<td id=\"superTotal\" style=\"font-weight:bold;\"></td><td></td></tr>";
 	
 	$content .= "</table></form><button onclick=\"sheet.submit()\">Save</button>";
 	$content .= '<script type="text/javascript"><!--
