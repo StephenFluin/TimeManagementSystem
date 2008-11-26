@@ -5,19 +5,26 @@ authenticate();
 
 $type = $_POST["type"];
 $userid = $_POST["userid"];
+$username = getUsername($_POST['userid']);
+$month = explode("-", $_POST["month"]);  // [0] = year, [1] = month
 $content = "";
 
 
 if($type == "user-month") {
+	// "Running a report about a user.";
 	if($_SESSION["isAdministrator"] == 0 && $_SESSION["username"] != $username) {
 		showContent("You don't have access to run reports about other users!");
 	}
 	
 	$content .= "<div class=\"standardBox\"><h1>Time Report for $username</h1><div>";
 	$db = new DB();
-	$sql = "SELECT t.Client, t.Project, t.Task, SUM(tle.Hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId WHERE tle.userId = '$userid' GROUP BY t.projectId, t.id";
+	$sql = "SELECT c.Name, p.project, t.Task, SUM(tle.Hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId ON p.id = t.projectId JOIN tms_client c ON c.id = p.clientId WHERE tle.userId = '$userid' GROUP BY t.projectId, t.id";
 	$db->query($sql);
-	$content .= $sql;
+	
+	if($db->size() == 0) {
+		$content .= "No data was found for this user and this time period.";
+	}
+	//$content .= $sql;
 	$previousClient = $previousProject = "";
 	$width = 2;
 	$content .= "<table border=\"1\">";
@@ -36,7 +43,7 @@ if($type == "user-month") {
 	}
 	$content .= "</table></div>";
 	showContent($content);
-} else if ($type == "adjust-actuals") {
+} else if ($type == 'invoicing') {
 	if($_SESSION["isAdministrator"] == 0) {
 		showContent("You don't have access to run reports about other users!");
 	}
@@ -91,8 +98,51 @@ if($type == "user-month") {
 	$content .= "</div></div>";
 	
 	showContent($content);
+	
+	
+} else if($type="newinvoice") {
+	if($_SESSION["isAdministrator"] == 0 ) {
+		showContent("You don't have access to run reports about other users!");
+		exit;
+	}
+	$start = $month[0] . "-" . $month[1];
+	$end = $month[0] . '-' . ($month[1] + 1);
+	
+	$db = new DB();
+	$sql = "SELECT  c.Name, p.project, t.Task, tle.userId, SUM(tle.hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId JOIN tms_project as p ON p.id = t.projectId JOIN tms_client c ON c.id = p.clientId WHERE tle.date > '$start' AND tle.date < '$end' GROUP BY t.id, tle.userId";
+	$db->query($sql);
+	//print $sql;
+	
+	
+	if($db->size() == 0) {
+		showContent('No time has been logged yet for the selected time period.');
+	}
+	while(list($client,$project,$task,$user,$hours) = $db->fetchrow()) {
+		//print "$client-$project-$task-$hours<br/>\n";
+		$data[$client][$project][$task][getUsername($user)] = $hours;
+	}
+	$content .= "<style>table td {border-bottom: 1px solid black;}</style>";
+	$content .= "<table>";
+	foreach($data as $client=>$clientData) {
+	$content .= "<tr><td>$client</td><td></td><td></td><td></td><td></td></tr>";
+		foreach($clientData as $project=>$projectData) {
+			$content .= "<tr><td></td><td>$project</td><td></td><td></td><td></td></tr>";
+			foreach($projectData as $task=>$taskData) {
+				$content .= "<tr><td></td><td></td><td>$task</td><td></td><td></td></tr>";
+				foreach($taskData as $user=>$hours) {
+					$content .= "<tr><td></td><td></td><td></td><td>$user</td><td>$hours</td></tr>";
+				}
+			}
+		}
+	}
+	$content .= "</table>";
+	showContent($content);
+	
+	
+
+
 } else {
-	showContent("Unknown Report Type");
+	showContent("Unknown report type '$type'.");
 }
 
 
