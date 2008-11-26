@@ -79,7 +79,7 @@ function getUsername( $userId ) {
 		return $GLOBALS["memberList"][$userId];
 	} else {
 		$db = new DB();
-		$db->query("SELECT Username from users WHERE id = '$userId' LIMIT 1;");
+		$db->query("SELECT Username from tms_user WHERE id = '$userId' LIMIT 1;");
 		list( $name ) = $db->fetchrow();
 		$GLOBALS["memberList"][$userId] = $name;	
 	}
@@ -219,8 +219,8 @@ function reporting() {
 	
 	$content .= "$submitButton</form><br/><br/>";
 
-	$content .= 'Adjust Actuals:<br/>' . 
-			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"adjust-actuals\"/>".
+	$content .= 'Invoicing:<br/>' . 
+			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"invoicing\"/>".
 			getMonthBreakdownSelect() . $submitButton . "</form>";
 
 	return $content;
