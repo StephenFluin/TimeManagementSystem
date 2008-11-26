@@ -6,7 +6,8 @@ authenticate();
 $type = $_POST["type"];
 $userid = $_POST["userid"];
 $username = getUsername($_POST['userid']);
-$month = explode("-", $_POST["month"]);  // [0] = year, [1] = month
+list($start,$end) = explode("x", $_POST["dateRange"]);  // [0] = year, [1] = month
+
 $content = "";
 
 
@@ -18,7 +19,7 @@ if($type == "user-month") {
 	
 	$content .= "<div class=\"standardBox\"><h1>Time Report for $username</h1><div>";
 	$db = new DB();
-	$sql = "SELECT c.Name, p.project, t.Task, SUM(tle.Hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId ON p.id = t.projectId JOIN tms_client c ON c.id = p.clientId WHERE tle.userId = '$userid' GROUP BY t.projectId, t.id";
+	$sql = "SELECT c.Name, p.project, t.Task, SUM(tle.Hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId JOIN tms_project p ON p.id = t.projectId JOIN tms_client c ON c.id = p.clientId WHERE tle.userId = '$userid' AND tle.date >= '$start' AND tle.date<='$end' GROUP BY t.projectId, t.id";
 	$db->query($sql);
 	
 	if($db->size() == 0) {
@@ -48,22 +49,19 @@ if($type == "user-month") {
 		showContent("You don't have access to run reports about other users!");
 	}
 	$db = new DB();
-	$month = $_POST["month"];
 	$date = strtotime($month);
 	list($year,$month) = explode("-",$month);
 	$separator = "!|";
 	
-	$sqlstart = date("Y-m-d",mktime(0,0,0,$month,1,$year));
-	$sqlend =   date("Y-m-d",mktime(0,0,0,$month+1,0,$year));
 	
-	$content .= "<div class=\"standardBox\"><h1>Adjust Actuals - " . date("F-Y",$date) . "</h1><div>";
+	$content .= "<div class=\"standardBox\"><h1>Adjust Actuals - $start-$end</h1><div>";
 	$sql = "SELECT c.name, p.project, t.task,u.username, sum(hours), GROUP_CONCAT(le.comment SEPARATOR '$separator') 
 		FROM `tms_tasklogentry` le 
 			JOIN tms_task t ON t.id = le.taskId 
 			JOIN tms_project p ON p.id = t.projectId 
 			JOIN tms_client c ON c.id = p.clientId 
 			JOIN tms_user u ON u.id = le.userId 
-		WHERE le.date BETWEEN '$sqlstart' AND '$sqlend' 
+		WHERE le.date BETWEEN '$start' AND '$end' 
 			GROUP BY le.taskId, le.userId 
 			ORDER BY c.name,p.project;";
 	$db->query($sql);
@@ -76,23 +74,32 @@ if($type == "user-month") {
 	$content .= "<table>";
 	
 	foreach($data as $client=>$clientData) {
-		$content .= "<tr class=\"summary client\"><td>$client</td><td></td><td></td></tr>";
+		$clientRow = "";
+		$clientTotal = 0;
 		foreach($clientData as $project=>$projectData) {
-			$content .= "<tr class=\"summary project\"><td>$project</td><td></td><td></td></tr>";
+			$projectTotal = 0;
+			$projectRow = "";
 			foreach($projectData as $task=>$taskData) {
-				$content .= "<tr class=\"summary task\"><td>$task</td><td></td><td></td></tr>";
+				$taskTotal = 0;
+				$taskRow = "";
 				foreach($taskData as $user=>$userData) {
-					$content .= "<tr><td class=\"task\">$user</td><td>" . $userData[0] . "h</td><td>";
+					$notes = "";
 					foreach(explode($separator, $userData[1]) as $value) {
 						if($value != '') {
-							$content .= $value . ",";
+							$notes .= $value . ",";
 						}
 					}
-					$content .= "</td></tr>";
+					$taskRow .= "<tr class=\"task\"><td>$user</td><td>" . $userData[0] . "h</td><td>$notes</td></tr>";
+					$taskTotal += $userData[0];
 				
 				}
+				$projectRow .= "<tr class=\"summary task\"><td>$task</td><td>$taskTotal</td><td></td></tr>$taskRow";
+				$projectTotal += $taskTotal;
 			}
+			$clientRow .= "<tr class=\"summary project\"><td>$project</td><td>$projectTotal</td><td></td></tr>$projectRow";
+			$clientTotal += $projectTotal;
 		}
+		$content .= "<tr class=\"summary client\"><td>$client</td><td>$clientTotal</td><td></td></tr>$clientRow";
 	}
 	$content .= "</table>";
 	$content .= "</div></div>";
@@ -105,8 +112,7 @@ if($type == "user-month") {
 		showContent("You don't have access to run reports about other users!");
 		exit;
 	}
-	$start = $month[0] . "-" . $month[1];
-	$end = $month[0] . '-' . ($month[1] + 1);
+	
 	
 	$db = new DB();
 	$sql = "SELECT  c.Name, p.project, t.Task, tle.userId, SUM(tle.hours) FROM tms_tasklogentry as tle LEFT JOIN tms_task as t ON t.id = tle.taskId JOIN tms_project as p ON p.id = t.projectId JOIN tms_client c ON c.id = p.clientId WHERE tle.date > '$start' AND tle.date < '$end' GROUP BY t.id, tle.userId";

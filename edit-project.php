@@ -84,7 +84,7 @@ if( $_SESSION["isProjectManager"] == 1 ) {
 					"<label><input type=\"checkbox\" name=\"user[$id]\" checked=\"checked\"/>$user</label><br/>\n";
 		}
 		
-		$sql = "SELECT Username,id FROM tms_user ORDER BY Username";
+		$sql = "SELECT Username,id FROM tms_user WHERE enabled=1 ORDER BY Username";
 		$db->query($sql);
 		while(list($user, $id) = $db->fetchrow()) {
 			if(!array_key_exists($user, $usedUsers)) {

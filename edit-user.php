@@ -40,7 +40,7 @@ if( $_SESSION["isAdministrator"]  == 1 ) {
 		forward("admin.php");
 	} else if ($_GET["action"] == "delete" && $_GET["user"]) {
 		$uid = $db->escape($_GET["user"]);
-		$db->query("DELETE FROM tms_user WHERE id='$uid' LIMIT 1;");
+		$db->query("UPDATE tms_user SET enabled=0 WHERE id='$uid' LIMIT 1;");
 		forward("admin.php");
 	
 	} else if( $_GET["user"] ) {

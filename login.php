@@ -20,7 +20,7 @@ function checkTMSLogin() {
 	} else if(!$p) {
 		$return .= "You were missing a password.<br />\n";
 	} else {
-		$query = "SELECT id, Username, isProjectManager, isAdministrator FROM tms_user WHERE `UserName` = '$u' AND `Password` = MD5('$p') LIMIT 1;";
+		$query = "SELECT id, Username, isProjectManager, isAdministrator FROM tms_user WHERE `UserName` = '$u' AND `Password` = MD5('$p') AND enabled=1 LIMIT 1;";
 		$db->query( $query );
 		if( list($_SESSION["userid"], $_SESSION["username"], $_SESSION["isProjectManager"], $_SESSION["isAdministrator"]) = $db->fetchrow()) {
 			unset($return);
