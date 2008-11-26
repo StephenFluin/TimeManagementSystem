@@ -125,21 +125,54 @@ function forward( $newUrl) {
 	header ("Location: " . $newUrl );
 	return true;
 }
-function getMonthBreakdownSelect() {
-	$start = strtotime("20080101 1200");
+function getBreakdownSelect($mode="month") {
+	if($mode == "month") {
+		$monthChange = 1;
+	} else {
+		$dayChange = 7;
+	}
+	$reportingStart = strtotime("20080101 1200");
 
 
 	$month = 0;
-	$content = "<select name=\"month\">";
-	while(mktime(0,0,0,date("m") - $month) > $start) {
-		$date = date("Y-m",mktime(0,0,0,date("m") - $month));
-		$dateName = date("F-Y", mktime(0,0,0,date("m") - $month++));
-		$content .= "<option value=\"$date\">$dateName</option>\n";
+	$day = 0;
+	$content = "<select name=\"dateRange\">";
+	while(mktime(0,0,0,date("m") - $month,date("d")-$day,date('Y')) > $reportingStart) {
+		if($mode == "month") {
+			$stime = mktime(0,0,0,date("m") - $month,1-$day,date('Y'));
+		} else {
+			$stime = mktime()-(60*60*24)*(intval(date("N"))-1)-$day*24*60*60;
+		}
+		$start = date("Y-m-d",$stime);
+		
+		if($mode == "month") {
+			$etime = mktime(0,0,0,date("m") - $month + 1,0-$day,date('Y'));
+		} else {
+			$etime = $stime + 7*24*60*60;
+		}
+		$end = date("Y-m-d",$etime);
+		//print "my date is: " . date("Y-m-d",mktime(0,0,0,date("m") - $month + 1,23,2008));
+		if($mode=="month") {
+			$dateName = date("F-Y", mktime(0,0,0,date("m") - $month));
+		} else {
+			$dateName = date("m/d/Y",$stime) . "-" . date("m/d/Y",$etime);
+		}
+		$content .= "<option value=\"$start" . 'x' . "$end\">$dateName</option>\n";
+		$month += $monthChange;
+		$day += $dayChange;
+		//print "Start is $start, end is $end.";
+		//print mktime(0,0,0,date("m") - $month,date("d")-$day,date('Y')) - $reportingStart . " away from finish. ($month, $day)<br/>\n";
+		
 		
 	}
+	//print "Start is $start, end is $end.";
+	
 	$content .= "</select>";
+	
+	
 	return $content;	
 }
+
 
 
 
@@ -151,16 +184,23 @@ function showError($msg = "There was a problem with the database.") {
 /* @TODO: Implement caching for multiple calls of this. */
 function getUserList() {
 	
-	$db = new DB();
-	
-	// Create user list which is used by most user roles.
-	$sql = "SELECT Username, id FROM tms_user ORDER BY Username";
-	$db->query($sql);
-	$userList = array();
-	while( list( $user, $id ) = $db->fetchrow() ) {
+	foreach( getUserDataList() as $data) {
+		list( $user, $id )  = $data;
 		$userList[$user] = $id;
 	}
 	return $userList;
+}
+
+function getUserDataList() {
+	$db = new DB();
+	
+	// Create user list which is used by most user roles.
+	$sql = "SELECT Username, id, enabled FROM tms_user ORDER BY Username";
+	$db->query($sql);
+	while(list($user,$id, $enabled) = $db->fetchrow()) {
+		$data[] = array($user,$id,$enabled);
+	}
+	return $data;
 }
 
 function timelogger() {
@@ -213,26 +253,39 @@ function reporting() {
 	$content .="</select>";
 	
 	// print list of months starting with this one backwards.
-	$content .= getMonthBreakdownSelect();
+	$content .= getBreakdownSelect();
 
 	
 	
 	$content .= "$submitButton</form><br/><br/>";
 
 	$content .= 'Invoicing:<br/>' . 
-			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"invoicing\"/>".
-			getMonthBreakdownSelect() . $submitButton . "</form>";
+			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"invoicing\"/><input type=\"hidden\" name=\"mode\" value=\"monthly\"/>".
+			getBreakdownSelect() . $submitButton . "</form><br/><br/>";
+			
+	$content .= 'Invoicing Weekly<br/>' . 
+			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"invoicing\"/><input type=\"hidden\" name=\"mode\" value=\"weekly\"/>".
+			getBreakdownSelect("week") . $submitButton . "</form><br/><br/>";
+			
+	$content .= 'Invoicing (Alternate version):<br/>' . 
+			"\n<form action=\"report.php\" method=\"post\"><input type=\"hidden\" name=\"type\" value=\"invoicing-new\"/>".
+			getBreakdownSelect() . $submitButton . "</form>";
 
 	return $content;
 }
 
 function administration() {
 	$content .=  "<div style=\"border: 1px solid;width:300px;\"><h1>User List</h1>";
-	foreach(getUserList() as $user=>$id) {
+	foreach(getUserDataList() as $data) {
+		list($user,$id,$enabled) = $data;
 		$content .=  "<div style=\"padding-left: 10px;\">" .
-				"	<a href=\"edit-user.php?user=$id\">$user</a>" .
-				"	[<a href=\"edit-user.php?action=delete&user=$id\" onclick=\"return confirmDelete('this user, ALL logged time, and project assignments');\">x</a>]" .	
-				"</div>";
+				"	<a href=\"edit-user.php?user=$id\">$user</a>";
+		if($enabled) {
+			$content .= "	[<a href=\"edit-user.php?action=delete&user=$id\" onclick=\"return confirmDelete('this user's enabled');\">x</a>]";
+		} else {
+			$content .= "  [disabled]";
+		}
+		$content .= "</div>";
 	}
 	$content .=  "</div>\n";
 	$content .=  "<a href=\"edit-user.php?action=new\">New User</a><br/><br/>\n\n<br/>\n";
@@ -282,6 +335,8 @@ function getDashboard() {
 	while( list($project, $client, $total, $actual) = $db->fetchrow()) {
 		if($total == "") {
 			$data = "No tasks have been defined yet.";
+		} else if ($total == 0) {
+			$data = "No tasks have estimates yet.";
 		} else if ($actual == "") {
 			$data = "No hours have been logged yet. Estimate: $total";
 		} else {
