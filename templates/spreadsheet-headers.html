@@ -38,12 +38,12 @@ function changed() {
 function update(event,x,y) {
 	if(event && (event.keyCode == 13 || event.keyCode == 40)) {
 		//enter or down arrow
-		document.getElementById(x + (parseInt(y) + 1)).focus();
-		document.getElementById(x + (parseInt(y) + 1)).select();
+		document.getElementById(x + "x" + (parseInt(y) + 1)).focus();
+		document.getElementById(x + "x" + (parseInt(y) + 1)).select();
 	} else if (event && event.keyCode == 38) {
 		// up arrow
-		document.getElementById(x + (parseInt(y) - 1)).focus();
-		document.getElementById(x + (parseInt(y) - 1)).select();
+		document.getElementById(x + "x" + (parseInt(y) - 1)).focus();
+		document.getElementById(x + "x" + (parseInt(y) - 1)).select();
 	} else if(event && event.keyCode == 37) {
 		// @TODO Code left arrow key
 	} else if(event && event.keyCode == 39) {
@@ -51,40 +51,52 @@ function update(event,x,y) {
 	}
 	// @TODO Keep this section only for speed puposes, once computers are faster, we should just recalc the whole table.
 	if(x && y && !(event.keyCode >= 37 && event.keyCode <= 40 || event.keyCode ==13 || event.keyCode == 9 || event.keyCode==16)) {
-		if(document.getElementById(x + y).value == "") {
-			document.getElementById(x + y).value = "0";
+		if(document.getElementById(x + "x" + y).value == "") {
+			document.getElementById(x + "x" + y).value = "0";
 		} else {
 			//alert("cell wasn't empty");
 		}
+		
+		var superTotal = 0;
 
 		document.forms.sheet.modified.value = "true";
 		var total = 0;
 		for(var i = 0;i<columns;i++) {
-			total += parseFloat(document.getElementById(alphabet[i] + y).value);
+			total += parseFloat(document.getElementById(i + "x" + y).value);
 		}
 		document.getElementById("taskTotal" + y).innerHTML = total;
+		superTotal += total;
 		
 		total = 0;
 		for(var j = 1;j<=rows;j++) {
-			total += parseFloat(document.getElementById(x + j).value);
+			total += parseFloat(document.getElementById(x + "x" + j).value);
 		}
 		document.getElementById("dayTotal" + x).innerHTML = total;
+		superTotal += total;
+		
+		//document.getElementById("superTotal").innerHTML = superTotal;
+		
 	} else {
 		//alert("no y");
+		var superTotal = 0;
+		
 		for(var j = 1;j<=rows;j++) {
 			var total = 0;
 			for(var i = 0;i<columns;i++) {
-				total += parseFloat(document.getElementById(alphabet[i] + j).value);
+				total += parseFloat(document.getElementById(i + "x" + j).value);
 			}
 			document.getElementById("taskTotal" + j).innerHTML = total;
+			superTotal += total;
 		}
 		for(var i = 0;i<columns;i++) {
 			var total = 0;
 			for(var j = 1;j<=rows;j++) {
-				total += parseFloat(document.getElementById(alphabet[i] + j).value);
+				total += parseFloat(document.getElementById(i + "x" + j).value);
 			}
-			document.getElementById("dayTotal" + alphabet[i]).innerHTML = total;
+			document.getElementById("dayTotal" + i).innerHTML = total;
+			superTotal += total;
 		}
+		document.getElementById("superTotal").innerHTML = superTotal;
 		
 	}
 		
