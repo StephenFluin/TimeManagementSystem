@@ -45,12 +45,14 @@ taskData looks like $data[client][project][task] = tid
 userData looksl ike $data[tid][date] = hours
 */
 function showSheet($taskData) {
-
 	list($start,$end,$stime,$etime,$daysInPeriod,$dayLength) = getDatePeriod();
 
 	//$data[tid][date] = hours
 	$db = new DB();
-	$db->query("SELECT taskId, date, hours, comment FROM tms_tasklogentry WHERE userId = '" . $_SESSION["userid"] . "' ORDER BY entered ASC;");
+	
+	// Stephen 20081129 I think this could be improved with a `date` BETWEEN start AND end
+	// This only gets the actuals, not the task list itself. The main task list is passed in as $taskData.
+	$db->query("SELECT taskId, `date`, hours, comment FROM tms_tasklogentry WHERE userId = '" . $_SESSION["userid"] . "'   ORDER BY entered ASC;");
 	while(list($taskId,$date,$hours,$comment) = $db->fetchrow()) {
 		$userData[$taskId][$date] = array($hours,$comment);
 	}
@@ -65,8 +67,6 @@ function showSheet($taskData) {
 	
 	<table cellspacing="0">';
 	
-	// This method of column naming causes problems with long search terms
-	$string = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-=";
 	
 	// Print Headers
 	$content .= "<tr class=\"dateHeader\"><td>Task</td>";

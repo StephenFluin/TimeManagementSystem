@@ -19,4 +19,5 @@ h2 {
 .client>td:first-child 		{text-indent:5px;}
 .project>td:first-child		{text-indent:20px;}
 .task>td:first-child		{text-indent:50px;}
-.summary			{background-color:#DDD}
+.summary					{background-color:#DDD}
+.columns					{float:left;width:300px;}	
